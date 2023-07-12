@@ -1,0 +1,38 @@
+Продолжение кода:
+
+```python
+def get_price(pair, exchange):
+    if exchange == 'Binance':
+        url = f'{BINANCE_API_URL}ticker/price?symbol={pair}'
+    elif exchange == 'Bybit':
+        url = f'{BYBIT_API_URL}ticker/price?symbol={pair}'
+    response = requests.get(url)
+    data = response.json()
+    return float(data['price'])
+
+# Асинхронная функция отправки сообщения в Telegram
+async def send_to_telegram(msg):
+    bot = telebot.TeleBot(TELEGRAM_TOKEN)
+    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
+
+# Главная асинхронная функция бота
+async def bot_main_async():
+    while True:
+        for pair in pairs:
+            binance_price = get_price(pair, 'Binance')
+            bybit_price = get_price(pair, 'Bybit')
+            diff = (binance_price - bybit_price) / bybit_price * 100
+            if abs(diff) > 1:
+                msg = f'{pair}: Binance - {binance_price:.2f}, Bybit - {bybit_price:.2f}, diff - {diff:.2f}%'
+                await send_to_telegram(msg)
+        time.sleep(60)  # Перерыв между запросами
+
+# Запуск главной функции
+asyncio.run(bot_main_async())
+```
+
+Итак, ниже основные детали этого кода:
+
+- Функция `get_price(pair, exchange)` выполняет запрос к бирже и возвращает цену указанной пары валют (т. е. на бирже Binance или Bybit)
+- Функция `send_to_telegram(msg)` отправляет сообщение в Telegram в указанный chat_id.
+- Главная асинхронная функция `bot_main_async()` отслеживает разницу курса между биржами, и если эта разница превышает 1%, то вызывает функцию `send_to_telegram()` для отправки сообщения в указанный чат Telegram.
